@@ -1,0 +1,171 @@
+// TrueRank Core System Schema (SQLite & Prisma)
+// Supports multi-tenant fighter records, decentralized identity, and event cards.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// Base user record for authentication and profile linkage.
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String   @default("password")
+  role      String   @default("PENDING")
+  onboarded Boolean  @default(false)
+  
+  // Promoter metadata fields
+  promoterOrg      String   @default("")
+  promoterSanction String   @default("")
+  promoterLocation String   @default("")
+  promoterWebsite  String   @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 1-to-1 relationship with Global Fighter Passport (for FIGHTER role users)
+  fighter   Fighter?
+  
+  // Events owned by this user (if they are a PROMOTER)
+  events    Event[]  @relation("PromoterEvents")
+}
+
+/// BJJ Belts used for handicap calculations in the Matchmaker Engine
+/// The Global Fighter Passport
+/// Standalone entity linked 1-to-1 with a base User record.
+/// NOT nested or owned by any single promoter, enabling decetralized identity.
+model Fighter {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  gym           String
+  location      String   @default("Unknown")
+  age           Int
+  gender        String   // "MALE" or "FEMALE"
+  weightClass   String   // "-63kg", "-68kg", "-73kg", "-78kg", "-85kg", "-91kg", "100kg+"
+  bjjBelt       String   @default("WHITE")
+  titles        String   @default("")
+  
+  // Activity metrics
+  lastFightDate DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  // Multi-Sport Profiles: Isolated Wins, Losses, Draws and unique Elo ratings (defaulting to 1200)
+  mmaWins       Int      @default(0)
+  mmaLosses     Int      @default(0)
+  mmaDraws      Int      @default(0)
+  mmaElo        Int      @default(1200)
+
+  bjjWins       Int      @default(0)
+  bjjLosses     Int      @default(0)
+  bjjDraws      Int      @default(0)
+  bjjElo        Int      @default(1200)
+
+  mtWins        Int      @default(0)
+  mtLosses      Int      @default(0)
+  mtDraws       Int      @default(0)
+  mtElo         Int      @default(1200)
+
+  boxingWins    Int      @default(0)
+  boxingLosses  Int      @default(0)
+  boxingDraws   Int      @default(0)
+  boxingElo     Int      @default(1200)
+
+  // Implicit many-to-many relationship with Events (active tournament roster)
+  events        Event[]  @relation("EventFighters")
+
+  // Event sign-up applications
+  requests      EventRequest[]
+
+  // Scheduled matchups where fighter occupies Red or Blue Corner
+  boutsAsRed    ScheduledBout[] @relation("BoutsAsRed")
+  boutsAsBlue   ScheduledBout[] @relation("BoutsAsBlue")
+}
+
+/// Event model representing tournament structures owned by a promoter.
+model Event {
+  id            String   @id @default(uuid())
+  name          String
+  date          DateTime // Global Date Standardization Rule guarantees safe ISO saving
+  location      String
+  
+  weighInDate   String   @default("")
+  weighInTime   String   @default("")
+  promoEvents   String   @default("")
+  published     Boolean  @default(false)
+  started       Boolean  @default(false)
+  
+  promoterId String
+  promoter   User     @relation("PromoterEvents", fields: [promoterId], references: [id])
+
+  // Active roster representing implicit connection of fighters
+  fighters   Fighter[] @relation("EventFighters")
+
+  // Sign-ups logged for events
+  requests   EventRequest[]
+
+  // Scheduled card matchups inside the event
+  bouts      ScheduledBout[]
+}
+
+/// Tracks fighter sign-ups & applications for events.
+model EventRequest {
+  id        String   @id @default(uuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  fighterId String
+  fighter   Fighter  @relation(fields: [fighterId], references: [id], onDelete: Cascade)
+  
+  status    String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, fighterId])
+}
+
+/// Represents a scheduled bout on an event card.
+model ScheduledBout {
+  id            String       @id @default(uuid())
+  eventId       String
+  event         Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  fighterRedId  String
+  fighterRed    Fighter      @relation("BoutsAsRed", fields: [fighterRedId], references: [id])
+  
+  fighterBlueId String
+  fighterBlue   Fighter      @relation("BoutsAsBlue", fields: [fighterBlueId], references: [id])
+  
+  sport         String       // "MMA", "BJJ", "MT", "BOXING"
+  weightClass   String
+  boutOrder     Int          @default(0) // Managing running order sequence
+  fighterRedCorner  String   @default("RED")
+  fighterBlueCorner String   @default("BLUE")
+
+  confirmedWeight String   @default("")
+  cardType        String   @default("UNDER") // "MAIN" or "UNDER"
+
+  completed     Boolean   @default(false)
+  winnerId      String?
+  method        String?
+  completedAt   DateTime?
+
+  // Match results associated with this bout
+  results       MatchResult[]
+}
+
+/// Tracks final match outcomes linked directly to scheduled bouts.
+model MatchResult {
+  id         String        @id @default(uuid())
+  boutId     String        @unique
+  bout       ScheduledBout @relation(fields: [boutId], references: [id], onDelete: Cascade)
+  
+  winnerId   String?       // Nullable for draws
+  method     String        // e.g., "KO", "SUBMISSION", "DECISION"
+  boutOrder  Int           @default(0) // Strict boutOrder field
+}

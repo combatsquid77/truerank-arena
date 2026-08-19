@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Default: Light mode - White and Purple */
+  --bg-base: #ffffff;
+  --bg-surface: #fcfcfd;
+  --bg-panel: #f3f4f6;
+  --bg-panel-hover: #e5e7eb;
+  --border-base: #e2e8f0;
+  --border-acc: #c084fc;
+  
+  --text-primary: #0f172a;
+  --text-primary-sub: #1e293b;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  
+  --text-acc-light: #a78bfa;
+  --text-acc: #6d28d9; /* Purple text */
+  --bg-acc: #7c3aed; /* Purple bg */
+  --bg-acc-hover: #6d28d9;
+  --text-acc-on: #ffffff;
+  --color-glow: rgba(124, 58, 237, 0.08);
+  --accent-subtle: #faf5ff;
+  --accent-badge: #f3e8ff;
+  --shadow-acc: rgba(124, 58, 237, 0.15);
+}
+
+.dark {
+  /* Dark mode - Black and Lime Green */
+  --bg-base: #000000;
+  --bg-surface: #0a0a0a;
+  --bg-panel: #141414;
+  --bg-panel-hover: #1f1f1f;
+  --border-base: #1f1f1f;
+  --border-acc: #84cc16; /* Lime */
+  
+  --text-primary: #f4f4f5;
+  --text-primary-sub: #e4e4e7;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  
+  --text-acc-light: #bef264;
+  --text-acc: #a3e635; /* Lime text is lighter in dark mode for readability */
+  --bg-acc: #84cc16; /* Lime bg */
+  --bg-acc-hover: #65a30d;
+  --text-acc-on: #000000;
+  --color-glow: rgba(132, 204, 22, 0.15);
+  --accent-subtle: #032200;
+  --accent-badge: #0a2f07;
+  --shadow-acc: rgba(132, 204, 22, 0.3);
+}
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Custom overrides of standard Tailwind Slate colors to map to dynamic light/dark variables */
+  --color-slate-950: var(--bg-base);
+  --color-slate-900: var(--bg-surface);
+  --color-slate-850: var(--bg-panel);
+  --color-slate-800: var(--border-base);
+  --color-slate-700: var(--border-base);
+
+  --color-slate-100: var(--text-primary);
+  --color-slate-200: var(--text-primary-sub);
+  --color-slate-350: var(--text-secondary);
+  --color-slate-300: var(--text-secondary);
+  --color-slate-400: var(--text-tertiary);
+  --color-slate-500: var(--text-tertiary);
+
+  --color-purple-50: var(--text-acc-on);
+  --color-purple-300: var(--text-acc-light);
+  --color-purple-400: var(--text-acc-light);
+  --color-purple-500: var(--text-acc);
+  --color-purple-655: var(--text-acc);
+  --color-purple-600: var(--text-acc);
+  --color-purple-700: var(--bg-acc);
+  --color-purple-800: var(--bg-acc-hover);
+  --color-purple-950: var(--accent-badge);
+  --color-purple-900: var(--accent-subtle);
+}
+
+/* Smooth fading and entering effects for dynamic single-screen routing */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
