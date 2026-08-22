@@ -19,7 +19,7 @@ export default function SettingsPanel({ currentUser }: SettingsPanelProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const token = localStorage.getItem('token') || '';
+  const token = localStorage.getItem('truerank_auth_token') || '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

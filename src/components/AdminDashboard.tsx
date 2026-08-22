@@ -80,7 +80,7 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
   const [editingFighter, setEditingFighter] = useState<Fighter | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
-  const token = localStorage.getItem('token') || '';
+  const token = localStorage.getItem('truerank_auth_token') || '';
 
   const loadData = async () => {
     setLoading(true);
