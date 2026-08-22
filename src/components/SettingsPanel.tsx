@@ -50,9 +50,14 @@ export default function SettingsPanel({ currentUser }: SettingsPanelProps) {
         })
       });
 
-      const data = await res.json();
+      let data: any = {};
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      }
+
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to change password');
+        throw new Error(data.error || `Failed to change password: Server responded with status ${res.status}`);
       }
 
       setSuccess('Your password has been changed successfully!');

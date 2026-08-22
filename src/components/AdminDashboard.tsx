@@ -178,8 +178,12 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
           promoterOrg: newUserPromoterOrg
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create user account');
+      let data: any = {};
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      }
+      if (!res.ok) throw new Error(data.error || `Failed to create user account: Server responded with status ${res.status}`);
       
       triggerSuccess('User account registered successfully!');
       setShowAddUserModal(false);
@@ -261,8 +265,12 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
           bjjBelt: newFighterBelt
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create fighter passport');
+      let data: any = {};
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      }
+      if (!res.ok) throw new Error(data.error || `Failed to create fighter passport: Server responded with status ${res.status}`);
       
       triggerSuccess('Fighter passport created successfully!');
       setShowAddFighterModal(false);
@@ -335,8 +343,12 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
           promoterId: newEventPromoterId
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create event card');
+      let data: any = {};
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      }
+      if (!res.ok) throw new Error(data.error || `Failed to create event card: Server responded with status ${res.status}`);
       
       triggerSuccess('Event card generated successfully!');
       setShowAddEventModal(false);

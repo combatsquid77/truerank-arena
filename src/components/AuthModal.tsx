@@ -43,9 +43,15 @@ export default function AuthModal({ initialMode, onClose, onSuccess }: AuthModal
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
+      
+      let data: any = {};
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+      }
+
       if (!res.ok) {
-        throw new Error(data.error || 'Authentication failed');
+        throw new Error(data.error || `Authentication failed: Server responded with status ${res.status}`);
       }
       onSuccess(data.token, data.user);
     } catch (err: any) {
