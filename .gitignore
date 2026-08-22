@@ -8,3 +8,10 @@ coverage/
 !.env.example
 *.db
 *.db-journal
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
