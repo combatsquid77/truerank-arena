@@ -11,6 +11,11 @@ provider "azurerm" {
   features {}
 }
 
+variable "turnstile_secret_key" {
+  type      = string
+  sensitive = true
+}
+
 # 1. Secure Resource Group in West Central US
 resource "azurerm_resource_group" "rg" {
   name     = "rg-truerank-prod"
@@ -72,6 +77,7 @@ resource "azurerm_linux_web_app" "app" {
     "PORT"                           = "8080"
     "DATABASE_URL"                   = "file:/home/data/dev.db"
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "false"
+    "TURNSTILE_SECRET_KEY"           = var.turnstile_secret_key
   }
 }
 
