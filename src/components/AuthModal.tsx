@@ -202,7 +202,7 @@ const TurnstileWidget = React.memo(({ onVerify }: { onVerify: (token: string) =>
             const widgetElement = document.createElement('div');
             containerRef.current.appendChild(widgetElement);
             (window as any).turnstile.render(widgetElement, {
-              sitekey: '1x00000000000000000000AA',
+              sitekey: '0x4AAAAAAEYsnc2UPMavAmEb',
               theme: 'dark',
               callback: (token: string) => {
                 onVerify(token);
