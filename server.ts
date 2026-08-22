@@ -507,9 +507,28 @@ async function startServer() {
   // Authentication & Onboarding Routes
   app.post('/api/auth/signup', async (req, res) => {
     try {
-      const { email, password, name } = req.body;
+      const { email, password, name, turnstileToken } = req.body;
       if (!email || !password || !name) {
         return res.status(400).json({ error: 'Missing required signup fields' });
+      }
+
+      // Verify Turnstile challenge token with Cloudflare API
+      const secretKey = process.env.TURNSTILE_SECRET_KEY || '1x00000000000000000000000000000000AA';
+      try {
+        const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            secret: secretKey,
+            response: turnstileToken
+          })
+        });
+        const verifyResult = await verifyRes.json() as any;
+        if (!verifyResult.success) {
+          return res.status(400).json({ error: 'Bot validation challenge failed. Please try again.' });
+        }
+      } catch (err: any) {
+        console.error('Turnstile verification error:', err);
       }
       const existing = await prisma.user.findUnique({ where: { email } });
       if (existing) {

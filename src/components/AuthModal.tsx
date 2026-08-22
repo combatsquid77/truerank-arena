@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Loader2 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -14,6 +14,29 @@ export default function AuthModal({ initialMode, onClose, onSuccess }: AuthModal
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+
+  useEffect(() => {
+    if (mode === 'signup') {
+      setTurnstileToken('');
+      const interval = setInterval(() => {
+        if ((window as any).turnstile) {
+          clearInterval(interval);
+          try {
+            (window as any).turnstile.render('#turnstile-container', {
+              sitekey: '1x00000000000000000000AA', // CF Turnstile Always-Pass Sitekey
+              callback: (token: string) => {
+                setTurnstileToken(token);
+              }
+            });
+          } catch (e) {
+            console.error('Turnstile render error:', e);
+          }
+        }
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, [mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +44,16 @@ export default function AuthModal({ initialMode, onClose, onSuccess }: AuthModal
     setError('');
 
     const url = mode === 'login' ? '/api/auth/login' : '/api/auth/signup';
-    const payload = mode === 'login' ? { email, password } : { email, password, name };
+    
+    if (mode === 'signup' && !turnstileToken) {
+      setError('Please complete the verification challenge.');
+      setLoading(false);
+      return;
+    }
+
+    const payload = mode === 'login' 
+      ? { email, password } 
+      : { email, password, name, turnstileToken };
 
     try {
       const res = await fetch(url, {
@@ -124,6 +156,12 @@ export default function AuthModal({ initialMode, onClose, onSuccess }: AuthModal
               />
             </div>
           </div>
+
+          {mode === 'signup' && (
+            <div className="flex justify-center py-2">
+              <div id="turnstile-container"></div>
+            </div>
+          )}
 
           <button 
             type="submit"
