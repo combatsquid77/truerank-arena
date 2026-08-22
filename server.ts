@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { Fighter, Event, EventRequest, ScheduledBout, MatchResult, Sport, User, BjjBelt, Gender, WeightClass } from './src/types';
 import { matchmakeRoster, assignSmartCorners, calculateWalkoutTimings, getSportElo } from './src/matchmaker';
@@ -444,8 +445,19 @@ async function seedDatabase() {
 }
 
 async function startServer() {
+  // Ensure the SQLite directory exists if running in file mode
+  const dbUrl = process.env.DATABASE_URL || '';
+  if (dbUrl.startsWith('file:')) {
+    const dbPath = dbUrl.replace('file:', '');
+    const dbDir = path.dirname(dbPath);
+    if (dbDir && !fs.existsSync(dbDir)) {
+      console.log(`Creating database directory: ${dbDir}`);
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+  }
+
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json());
 
