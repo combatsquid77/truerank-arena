@@ -68,9 +68,10 @@ resource "azurerm_linux_web_app" "app" {
   }
 
   app_settings = {
-    "NODE_ENV"     = "production"
-    "PORT"         = "8080"
-    "DATABASE_URL" = "file:/home/data/dev.db" # Mounts SQLite onto persistent Azure App Service storage
+    "NODE_ENV"                       = "production"
+    "PORT"                           = "8080"
+    "DATABASE_URL"                   = "file:/home/data/dev.db"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "false"
   }
 }
 
