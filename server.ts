@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import { execSync } from 'child_process';
 import { createServer as createViteServer } from 'vite';
 import { Fighter, Event, EventRequest, ScheduledBout, MatchResult, Sport, User, BjjBelt, Gender, WeightClass } from './src/types';
 import { matchmakeRoster, assignSmartCorners, calculateWalkoutTimings, getSportElo } from './src/matchmaker';
@@ -469,6 +470,15 @@ async function startServer() {
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;");
     next();
   });
+
+  // Run database migrations on startup to create tables if they don't exist
+  try {
+    console.log("Synchronizing database schema...");
+    execSync('npx prisma db push', { stdio: 'inherit' });
+    console.log("Database schema synchronized successfully!");
+  } catch (err) {
+    console.error("Error running database synchronization on startup:", err);
+  }
 
   // Run database self-seeding on startup
   try {
