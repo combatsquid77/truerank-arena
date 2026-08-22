@@ -517,10 +517,10 @@ async function startServer() {
       try {
         const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
             secret: secretKey,
-            response: turnstileToken
+            response: turnstileToken || ''
           })
         });
         const verifyResult = await verifyRes.json() as any;
@@ -1377,12 +1377,19 @@ async function startServer() {
   async function checkAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
     const userId = req.headers.authorization;
     if (!userId) {
+      console.log("[Admin Auth Warning] Missing session authorization token header.");
       return res.status(401).json({ error: 'Unauthorized: Missing session token' });
     }
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.role !== 'ADMIN') {
+    if (!user) {
+      console.log(`[Admin Auth Warning] Session user not found for ID: ${userId}`);
+      return res.status(401).json({ error: 'Unauthorized: Invalid session token' });
+    }
+    if (user.role !== 'ADMIN') {
+      console.log(`[Admin Auth Warning] User ${user.email} (ID: ${user.id}) has role ${user.role}. Forbidden: ADMIN role required.`);
       return res.status(403).json({ error: 'Forbidden: Admin access required' });
     }
+    console.log(`[Admin Auth Success] Admin user ${user.email} successfully authorized.`);
     next();
   }
 
@@ -1543,6 +1550,103 @@ async function startServer() {
         data: { password: hashPassword(newPassword) }
       });
       res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Create a new user (account)
+  app.post('/api/admin/users', checkAdmin, async (req, res) => {
+    try {
+      const { name, email, password, role, onboarded, promoterOrg } = req.body;
+      if (!name || !email || !password || !role) {
+        return res.status(400).json({ error: 'Missing required account creation fields' });
+      }
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing) {
+        return res.status(400).json({ error: 'Email already registered' });
+      }
+      const newUser = await prisma.user.create({
+        data: {
+          id: `u-${Date.now()}`,
+          name,
+          email,
+          password: hashPassword(password),
+          role,
+          onboarded: onboarded || false,
+          promoterOrg: promoterOrg || ''
+        }
+      });
+      res.json(newUser);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Create a new fighter (account + passport profile)
+  app.post('/api/admin/fighters', checkAdmin, async (req, res) => {
+    try {
+      const {
+        name, email, password, gym, location, age, gender, weightClass, bjjBelt
+      } = req.body;
+
+      if (!name || !email || !password || !gym || !location || !age || !gender || !weightClass) {
+        return res.status(400).json({ error: 'Missing required fighter creation fields' });
+      }
+
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing) {
+        return res.status(400).json({ error: 'Email already registered' });
+      }
+
+      const uId = `u-${Date.now()}`;
+      const newUser = await prisma.user.create({
+        data: {
+          id: uId,
+          name,
+          email,
+          password: hashPassword(password),
+          role: 'FIGHTER',
+          onboarded: true
+        }
+      });
+
+      const newFighter = await prisma.fighter.create({
+        data: {
+          id: `f-${Date.now()}`,
+          userId: uId,
+          gym,
+          location,
+          age: Number(age),
+          gender,
+          weightClass,
+          bjjBelt: bjjBelt || 'WHITE'
+        }
+      });
+
+      res.json({ user: newUser, fighter: newFighter });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Create a new event
+  app.post('/api/admin/events', checkAdmin, async (req, res) => {
+    try {
+      const { name, date, location, promoterId } = req.body;
+      if (!name || !date || !location || !promoterId) {
+        return res.status(400).json({ error: 'Missing required event creation fields' });
+      }
+      const newEvent = await prisma.event.create({
+        data: {
+          id: `e-${Date.now()}`,
+          name,
+          date: new Date(date),
+          location,
+          promoterId
+        }
+      });
+      res.json(newEvent);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

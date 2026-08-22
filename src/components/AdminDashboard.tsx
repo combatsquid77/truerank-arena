@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, Swords, Shield, Trash2, Edit3, Save, X, Calendar, 
-  MapPin, CheckCircle, Trophy, UserCheck, AlertTriangle 
+  MapPin, CheckCircle, Trophy, UserCheck, AlertTriangle, PlusCircle 
 } from 'lucide-react';
 
 interface User {
@@ -80,6 +80,36 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
   const [editingFighter, setEditingFighter] = useState<Fighter | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
+  // Creation Modals
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showAddFighterModal, setShowAddFighterModal] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+
+  // Creation States: User
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('password');
+  const [newUserRole, setNewUserRole] = useState('PENDING');
+  const [newUserOnboarded, setNewUserOnboarded] = useState(false);
+  const [newUserPromoterOrg, setNewUserPromoterOrg] = useState('');
+
+  // Creation States: Fighter
+  const [newFighterName, setNewFighterName] = useState('');
+  const [newFighterEmail, setNewFighterEmail] = useState('');
+  const [newFighterPassword, setNewFighterPassword] = useState('password');
+  const [newFighterGym, setNewFighterGym] = useState('');
+  const [newFighterLocation, setNewFighterLocation] = useState('');
+  const [newFighterAge, setNewFighterAge] = useState(25);
+  const [newFighterGender, setNewFighterGender] = useState('MALE');
+  const [newFighterWeight, setNewFighterWeight] = useState('-73kg');
+  const [newFighterBelt, setNewFighterBelt] = useState('WHITE');
+
+  // Creation States: Event
+  const [newEventName, setNewEventName] = useState('');
+  const [newEventDate, setNewEventDate] = useState('');
+  const [newEventLocation, setNewEventLocation] = useState('');
+  const [newEventPromoterId, setNewEventPromoterId] = useState('');
+
   const token = localStorage.getItem('truerank_auth_token') || '';
 
   const loadData = async () => {
@@ -107,6 +137,12 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
       setUsers(usersData);
       setFighters(fightersData);
       setEvents(eventsData);
+      
+      // Default choice for event promoter dropdown
+      const promoters = usersData.filter((u: User) => u.role === 'PROMOTER');
+      if (promoters.length > 0) {
+        setNewEventPromoterId(promoters[0].id);
+      }
     } catch (err: any) {
       setError(err.message || 'Error loading administrative records.');
     } finally {
@@ -124,6 +160,43 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
   };
 
   // --- USER API ACTIONS ---
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({
+          name: newUserName,
+          email: newUserEmail,
+          password: newUserPassword,
+          role: newUserRole,
+          onboarded: newUserOnboarded,
+          promoterOrg: newUserPromoterOrg
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create user account');
+      
+      triggerSuccess('User account registered successfully!');
+      setShowAddUserModal(false);
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('password');
+      setNewUserRole('PENDING');
+      setNewUserOnboarded(false);
+      setNewUserPromoterOrg('');
+      
+      await loadData();
+      onRefreshData();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
@@ -167,6 +240,46 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
   };
 
   // --- FIGHTER API ACTIONS ---
+  const handleCreateFighter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/fighters', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({
+          name: newFighterName,
+          email: newFighterEmail,
+          password: newFighterPassword,
+          gym: newFighterGym,
+          location: newFighterLocation,
+          age: Number(newFighterAge),
+          gender: newFighterGender,
+          weightClass: newFighterWeight,
+          bjjBelt: newFighterBelt
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create fighter passport');
+      
+      triggerSuccess('Fighter passport created successfully!');
+      setShowAddFighterModal(false);
+      setNewFighterName('');
+      setNewFighterEmail('');
+      setNewFighterPassword('password');
+      setNewFighterGym('');
+      setNewFighterLocation('');
+      setNewFighterAge(25);
+      
+      await loadData();
+      onRefreshData();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   const handleSaveFighter = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingFighter) return;
@@ -206,6 +319,38 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
   };
 
   // --- EVENT API ACTIONS ---
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({
+          name: newEventName,
+          date: newEventDate,
+          location: newEventLocation,
+          promoterId: newEventPromoterId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create event card');
+      
+      triggerSuccess('Event card generated successfully!');
+      setShowAddEventModal(false);
+      setNewEventName('');
+      setNewEventDate('');
+      setNewEventLocation('');
+      
+      await loadData();
+      onRefreshData();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEvent) return;
@@ -250,6 +395,8 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
     }
   };
 
+  const promotersList = users.filter(u => u.role === 'PROMOTER');
+
   // Filtering lists based on search bar
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -273,7 +420,7 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin mx-auto" />
         <p className="text-xs text-slate-500 font-mono tracking-widest uppercase">Fetching admin resources...</p>
       </div>
     );
@@ -297,8 +444,8 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
       )}
 
       {/* Dashboard Sub-Header Header Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-900">
-        <div className="flex gap-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-900">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => { setActiveSubTab('users'); setSearchQuery(''); }}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
@@ -328,15 +475,45 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
           </button>
         </div>
 
-        {/* Global Registry Search */}
-        <div className="w-full sm:w-64">
-          <input
-            type="text"
-            placeholder={`Search ${activeSubTab}...`}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-850 focus:border-purple-600 rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 outline-none transition"
-          />
+        {/* Action button + Search Bar */}
+        <div className="flex w-full md:w-auto items-center gap-3">
+          {activeSubTab === 'users' && (
+            <button
+              onClick={() => setShowAddUserModal(true)}
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md transition flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Add Account</span>
+            </button>
+          )}
+          {activeSubTab === 'fighters' && (
+            <button
+              onClick={() => setShowAddFighterModal(true)}
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md transition flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Add Fighter</span>
+            </button>
+          )}
+          {activeSubTab === 'events' && (
+            <button
+              onClick={() => setShowAddEventModal(true)}
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md transition flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Add Event</span>
+            </button>
+          )}
+
+          <div className="w-full md:w-48">
+            <input
+              type="text"
+              placeholder={`Search ${activeSubTab}...`}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-850 focus:border-purple-600 rounded-xl py-2 px-3 text-xs text-white placeholder-slate-600 outline-none transition"
+            />
+          </div>
         </div>
       </div>
 
@@ -604,7 +781,179 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
         </div>
       )}
 
-      {/* --- MODAL 1: EDIT USER --- */}
+      {/* --- CREATION MODAL 1: ADD ACCOUNT --- */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
+            <button onClick={() => setShowAddUserModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-350 transition cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+            <h3 className="font-extrabold text-sm uppercase tracking-wider text-white mb-6">Create New Account</h3>
+            
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Full Name</label>
+                <input type="text" required value={newUserName} onChange={e => setNewUserName(e.target.value)} placeholder="e.g. John Doe" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Email Address</label>
+                <input type="email" required value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} placeholder="name@domain.com" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Password</label>
+                <input type="password" required value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} placeholder="Minimum 6 characters" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Assigned Role</label>
+                <select value={newUserRole} onChange={e => setNewUserRole(e.target.value)} className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none">
+                  <option value="PENDING">PENDING</option>
+                  <option value="FIGHTER">FIGHTER</option>
+                  <option value="PROMOTER">PROMOTER</option>
+                  <option value="JUDGE">JUDGE</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+              
+              {newUserRole === 'PROMOTER' && (
+                <div className="space-y-1.5 animate-fadeIn">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Promoter Organization Name</label>
+                  <input type="text" value={newUserPromoterOrg} onChange={e => setNewUserPromoterOrg(e.target.value)} placeholder="e.g. Apex Combat Championships" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2">
+                <input type="checkbox" id="add-onboarded-checkbox" checked={newUserOnboarded} onChange={e => setNewUserOnboarded(e.target.checked)} className="rounded border-slate-800 text-purple-600 focus:ring-0 bg-slate-950 w-4 h-4"/>
+                <label htmlFor="add-onboarded-checkbox" className="text-xs text-slate-300 select-none">Mark profile as fully onboarded</label>
+              </div>
+
+              <button type="submit" className="w-full mt-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <PlusCircle className="w-4 h-4" />
+                <span>Register Account</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- CREATION MODAL 2: ADD FIGHTER --- */}
+      {showAddFighterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl my-8">
+            <button onClick={() => setShowAddFighterModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-350 transition cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+            <h3 className="font-extrabold text-sm uppercase tracking-wider text-white mb-6">Create Fighter Passport</h3>
+            
+            <form onSubmit={handleCreateFighter} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Fighter Name</label>
+                  <input type="text" required value={newFighterName} onChange={e => setNewFighterName(e.target.value)} placeholder="e.g. Khabib Nurmag" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Email Address</label>
+                  <input type="email" required value={newFighterEmail} onChange={e => setNewFighterEmail(e.target.value)} placeholder="khabib@aka.com" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Password</label>
+                  <input type="password" required value={newFighterPassword} onChange={e => setNewFighterPassword(e.target.value)} placeholder="password" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Gym</label>
+                  <input type="text" required value={newFighterGym} onChange={e => setNewFighterGym(e.target.value)} placeholder="e.g. AKA Academy" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Location</label>
+                  <input type="text" required value={newFighterLocation} onChange={e => setNewFighterLocation(e.target.value)} placeholder="e.g. Dagestan, RU" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Age</label>
+                  <input type="number" required value={newFighterAge} onChange={e => setNewFighterAge(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Gender</label>
+                  <select value={newFighterGender} onChange={e => setNewFighterGender(e.target.value)} className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none">
+                    <option value="MALE">MALE</option>
+                    <option value="FEMALE">FEMALE</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Weight Class</label>
+                  <select value={newFighterWeight} onChange={e => setNewFighterWeight(e.target.value)} className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none">
+                    <option value="-63kg">-63kg</option>
+                    <option value="-68kg">-68kg</option>
+                    <option value="-73kg">-73kg</option>
+                    <option value="-78kg">-78kg</option>
+                    <option value="-85kg">-85kg</option>
+                    <option value="-91kg">-91kg</option>
+                    <option value="100kg+">100kg+</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Belt Rank</label>
+                  <select value={newFighterBelt} onChange={e => setNewFighterBelt(e.target.value)} className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none">
+                    <option value="WHITE">WHITE</option>
+                    <option value="BLUE">BLUE</option>
+                    <option value="PURPLE">PURPLE</option>
+                    <option value="BROWN">BROWN</option>
+                    <option value="BLACK">BLACK</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" className="w-full mt-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <PlusCircle className="w-4 h-4" />
+                <span>Create Fighter Profile</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- CREATION MODAL 3: ADD EVENT --- */}
+      {showAddEventModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
+            <button onClick={() => setShowAddEventModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-350 transition cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+            <h3 className="font-extrabold text-sm uppercase tracking-wider text-white mb-6">Create Tournament Event</h3>
+            
+            <form onSubmit={handleCreateEvent} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Event Title</label>
+                <input type="text" required value={newEventName} onChange={e => setNewEventName(e.target.value)} placeholder="e.g. TrueRank Arena: Collision" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Location / Gym</label>
+                <input type="text" required value={newEventLocation} onChange={e => setNewEventLocation(e.target.value)} placeholder="e.g. London, UK" className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Date & Time</label>
+                <input type="datetime-local" required value={newEventDate} onChange={e => setNewEventDate(e.target.value)} className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none"/>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Event Promoter (Owner)</label>
+                <select value={newEventPromoterId} onChange={e => setNewEventPromoterId(e.target.value)} className="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-xs text-white outline-none">
+                  {promotersList.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.promoterOrg})</option>
+                  ))}
+                  {promotersList.length === 0 && (
+                    <option value="">No promoters found. Add a Promoter user first!</option>
+                  )}
+                </select>
+              </div>
+
+              <button type="submit" className="w-full mt-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <PlusCircle className="w-4 h-4" />
+                <span>Generate Event Card</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- EDIT MODAL 1: EDIT USER --- */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
           <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
@@ -666,7 +1015,7 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
         </div>
       )}
 
-      {/* --- MODAL 2: EDIT FIGHTER PASSPORT --- */}
+      {/* --- EDIT MODAL 2: EDIT FIGHTER PASSPORT --- */}
       {editingFighter && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
           <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl my-8">
@@ -789,7 +1138,7 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
         </div>
       )}
 
-      {/* --- MODAL 3: EDIT EVENT --- */}
+      {/* --- EDIT MODAL 3: EDIT EVENT --- */}
       {editingEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
           <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
