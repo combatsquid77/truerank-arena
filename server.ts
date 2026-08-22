@@ -1373,6 +1373,181 @@ async function startServer() {
     }
   });
 
+  // ADMIN MIDDLEWARE & ROUTES
+  async function checkAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+    const userId = req.headers.authorization;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: Missing session token' });
+    }
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Forbidden: Admin access required' });
+    }
+    next();
+  }
+
+  // Get all users
+  app.get('/api/admin/users', checkAdmin, async (req, res) => {
+    try {
+      const users = await prisma.user.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+      res.json(users);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Update a user's details/role
+  app.put('/api/admin/users/:id', checkAdmin, async (req, res) => {
+    try {
+      const { role, name, onboarded } = req.body;
+      const updated = await prisma.user.update({
+        where: { id: req.params.id },
+        data: { role, name, onboarded }
+      });
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Delete a user
+  app.delete('/api/admin/users/:id', checkAdmin, async (req, res) => {
+    try {
+      await prisma.user.delete({ where: { id: req.params.id } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get all fighters
+  app.get('/api/admin/fighters', checkAdmin, async (req, res) => {
+    try {
+      const fighters = await prisma.fighter.findMany({
+        include: { user: true },
+        orderBy: { createdAt: 'desc' }
+      });
+      res.json(fighters);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Update fighter details
+  app.put('/api/admin/fighters/:id', checkAdmin, async (req, res) => {
+    try {
+      const {
+        gym, location, age, gender, weightClass, bjjBelt,
+        mmaWins, mmaLosses, mmaDraws, mmaElo,
+        bjjWins, bjjLosses, bjjDraws, bjjElo,
+        mtWins, mtLosses, mtDraws, mtElo,
+        boxingWins, boxingLosses, boxingDraws, boxingElo
+      } = req.body;
+
+      const updated = await prisma.fighter.update({
+        where: { id: req.params.id },
+        data: {
+          gym, location, age: Number(age), gender, weightClass, bjjBelt,
+          mmaWins: Number(mmaWins), mmaLosses: Number(mmaLosses), mmaDraws: Number(mmaDraws), mmaElo: Number(mmaElo),
+          bjjWins: Number(bjjWins), bjjLosses: Number(bjjLosses), bjjDraws: Number(bjjDraws), bjjElo: Number(bjjElo),
+          mtWins: Number(mtWins), mtLosses: Number(mtLosses), mtDraws: Number(mtDraws), mtElo: Number(mtElo),
+          boxingWins: Number(boxingWins), boxingLosses: Number(boxingLosses), boxingDraws: Number(boxingDraws), boxingElo: Number(boxingElo)
+        }
+      });
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Delete a fighter
+  app.delete('/api/admin/fighters/:id', checkAdmin, async (req, res) => {
+    try {
+      await prisma.fighter.delete({ where: { id: req.params.id } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get all events
+  app.get('/api/admin/events', checkAdmin, async (req, res) => {
+    try {
+      const events = await prisma.event.findMany({
+        include: { promoter: true },
+        orderBy: { date: 'desc' }
+      });
+      res.json(events);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Update event details
+  app.put('/api/admin/events/:id', checkAdmin, async (req, res) => {
+    try {
+      const { name, date, location, published, started } = req.body;
+      const updated = await prisma.event.update({
+        where: { id: req.params.id },
+        data: {
+          name,
+          date: date ? new Date(date) : undefined,
+          location,
+          published,
+          started
+        }
+      });
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Delete an event
+  app.delete('/api/admin/events/:id', checkAdmin, async (req, res) => {
+    try {
+      await prisma.event.delete({ where: { id: req.params.id } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Account Settings: Change Password
+  app.put('/api/auth/change-password', async (req, res) => {
+    try {
+      const userId = req.headers.authorization;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized: Missing session token' });
+      }
+      const { currentPassword, newPassword } = req.body;
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Current password and new password are required' });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+      }
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      // Hash current password and match
+      if (user.password !== hashPassword(currentPassword)) {
+        return res.status(400).json({ error: 'Incorrect current password' });
+      }
+      // Save new password
+      await prisma.user.update({
+        where: { id: userId },
+        data: { password: hashPassword(newPassword) }
+      });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Vite integration for development or standard fallback in production
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

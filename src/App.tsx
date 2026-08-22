@@ -6,6 +6,8 @@ import JudgePanel from './components/JudgePanel';
 import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
 import Onboarding from './components/Onboarding';
+import AdminDashboard from './components/AdminDashboard';
+import SettingsPanel from './components/SettingsPanel';
 import { Fighter, Event, ScheduledBout, User } from './types';
 import { 
   Trophy, 
@@ -17,14 +19,15 @@ import {
   Layers,
   Sun,
   Moon,
-  LogOut
+  LogOut,
+  Settings
 } from 'lucide-react';
 
 export default function App() {
   const [fighters, setFighters] = useState<Fighter[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [bouts, setBouts] = useState<ScheduledBout[]>([]);
-  const [activeTab, setActiveTab] = useState<'leaderboard' | 'fighter' | 'promoter' | 'judge'>('leaderboard');
+  const [activeTab, setActiveTab] = useState<'leaderboard' | 'fighter' | 'promoter' | 'judge' | 'admin' | 'settings'>('leaderboard');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [judgeEventId, setJudgeEventId] = useState<string | null>(null);
@@ -228,6 +231,7 @@ export default function App() {
   const showFighterTab = currentUser?.role === 'FIGHTER' || currentUser?.role === 'ADMIN';
   const showPromoterTab = currentUser?.role === 'PROMOTER' || currentUser?.role === 'ADMIN';
   const showJudgeTab = currentUser?.role === 'JUDGE' || currentUser?.role === 'ADMIN';
+  const showAdminTab = currentUser?.role === 'ADMIN';
 
   // 1. If not authenticated, render the Landing Page
   if (!token) {
@@ -352,6 +356,21 @@ export default function App() {
                 <span>Scoring Officials</span>
               </button>
             )}
+
+            {showAdminTab && (
+              <button
+                onClick={() => setActiveTab('admin')}
+                id="tab-admin"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                  activeTab === 'admin'
+                    ? 'bg-red-750 text-red-50 shadow-md border border-red-500'
+                    : 'text-slate-400 hover:text-slate-100'
+                }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Admin Cockpit</span>
+              </button>
+            )}
           </nav>
 
           {/* User Widget */}
@@ -383,6 +402,17 @@ export default function App() {
                 <span className="block text-xs font-bold text-slate-200">{currentUser.name}</span>
                 <span className="block text-[8.5px] font-mono text-purple-400 uppercase tracking-widest">{currentUser.role}</span>
               </div>
+              <button 
+                onClick={() => setActiveTab('settings')}
+                className={`p-2 rounded-lg border transition cursor-pointer ${
+                  activeTab === 'settings' 
+                    ? 'bg-purple-950/40 border-purple-500/20 text-purple-200' 
+                    : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-450 hover:text-white'
+                }`}
+                title="Account Settings"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
               <button 
                 onClick={handleLogout}
                 className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-450 hover:text-white transition cursor-pointer"
@@ -579,6 +609,16 @@ export default function App() {
                 onRefresh={loadAllData}
                 inviteEventId={judgeEventId}
               />
+            )}
+
+            {/* 5. ADMIN COCKPIT */}
+            {activeTab === 'admin' && showAdminTab && (
+              <AdminDashboard onRefreshData={loadAllData} />
+            )}
+
+            {/* 6. ACCOUNT SETTINGS */}
+            {activeTab === 'settings' && (
+              <SettingsPanel currentUser={currentUser} />
             )}
 
           </div>
