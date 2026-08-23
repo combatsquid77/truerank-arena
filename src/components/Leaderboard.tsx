@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Fighter, Sport } from '../types';
-import { Award, ShieldAlert, Zap, Trophy, User as UserIcon } from 'lucide-react';
+import { Trophy, MapPin } from 'lucide-react';
 
 interface LeaderboardProps {
   fighters: Fighter[];
@@ -9,30 +9,29 @@ interface LeaderboardProps {
 
 export function getFighterActivityStatus(lastFightDateStr: string, totalFights: number) {
   const lastFight = new Date(lastFightDateStr);
-  const now = new Date('2026-06-13T03:46:49-07:00'); // Consistent with system time
+  const now = new Date('2026-06-13T03:46:49-07:00');
   const msDiff = now.getTime() - lastFight.getTime();
   const monthsDiff = msDiff / (1000 * 60 * 60 * 24 * 30.44);
 
   if (monthsDiff > 12) {
     return {
-      label: 'Inactive / At-Risk',
-      className: 'bg-slate-800 text-slate-400 border border-slate-700 font-mono text-[10px] px-2 py-0.5 rounded shadow-sm',
+      label: 'INACTIVE',
+      className: 'bg-slate-950 text-slate-500 border border-slate-800 font-mono text-[9px] px-1.5 py-0.5 rounded-sm',
       status: 'INACTIVE',
     };
   }
 
-  // If fighter has at least 3 fights total and has fought recently, they are Gold Standard
   if (totalFights >= 3) {
     return {
-      label: 'Gold Standard ✦',
-      className: 'bg-amber-500/10 text-amber-400 border border-amber-500/30 font-semibold font-mono tracking-wider text-[10px] px-2.5 py-0.5 rounded shadow-[0_0_12px_rgba(245,158,11,0.25)] animate-pulse',
+      label: 'ELITE ✦',
+      className: 'bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold font-mono tracking-wider text-[9px] px-1.5 py-0.5 rounded-sm',
       status: 'GOLD',
     };
   }
 
   return {
-    label: 'Standard Active',
-    className: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono text-[10px] px-2 py-0.5 rounded shadow-sm',
+    label: 'ACTIVE',
+    className: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono text-[9px] px-1.5 py-0.5 rounded-sm',
     status: 'ACTIVE',
   };
 }
@@ -83,7 +82,6 @@ export default function Leaderboard({ fighters, onSelectFighter }: LeaderboardPr
 
     Object.values(groups).forEach(groupFighters => {
       if (groupFighters.length === 0) return;
-      // Find maximum Elo inside group
       let maxElo = -1;
       let candidates: Fighter[] = [];
 
@@ -97,7 +95,6 @@ export default function Leaderboard({ fighters, onSelectFighter }: LeaderboardPr
         }
       });
 
-      // Award Champion style to #1 Elo holders
       candidates.forEach(f => {
         champSet.add(f.id);
       });
@@ -131,25 +128,25 @@ export default function Leaderboard({ fighters, onSelectFighter }: LeaderboardPr
         }
         return true;
       })
-      .sort((a, b) => b.elo - a.elo); // Sort descending by Elo rating
+      .sort((a, b) => b.elo - a.elo);
   }, [fighters, selectedSport, hideInactive, championIds]);
 
   return (
     <div id="true-leaderboard-container" className="space-y-6">
-      {/* Sport Selector & Toggle */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800">
-        <div className="flex flex-wrap gap-2">
+      
+      {/* Sport Selector & Hide Inactive Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 bg-slate-900 border border-slate-850">
+        <div className="flex flex-wrap gap-1">
           {(['MMA', 'BJJ', 'MT', 'BOXING'] as Sport[]).map(sport => {
             const isActive = selectedSport === sport;
             return (
               <button
                 key={sport}
-                id={`btn-sport-${sport}`}
                 onClick={() => setSelectedSport(sport)}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg tracking-wider transition-all duration-300 ${
+                className={`px-5 py-2.5 text-xs font-display font-bold uppercase tracking-wider transition cursor-pointer ${
                   isActive
-                    ? 'bg-purple-700 text-white shadow-lg shadow-purple-900/30 border border-purple-500'
-                    : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-850'
+                    ? 'bg-rose-700 text-white rounded-sm border border-rose-500 shadow-sm'
+                    : 'bg-[#1c1c20] text-slate-400 hover:text-slate-200 border border-slate-800'
                 }`}
               >
                 {sport === 'MT' ? 'MUAY THAI (MT)' : sport}
@@ -158,134 +155,149 @@ export default function Leaderboard({ fighters, onSelectFighter }: LeaderboardPr
           })}
         </div>
 
-        {/* Hide Inactive Filter */}
         <label className="flex items-center gap-3 cursor-pointer select-none">
           <input
             type="checkbox"
-            id="checkbox-hide-inactive"
             checked={hideInactive}
             onChange={(e) => setHideInactive(e.target.checked)}
-            className="w-4 h-4 rounded text-purple-600 bg-slate-950 border-slate-700 focus:ring-purple-500 focus:ring-offset-slate-900"
+            className="w-4 h-4 text-rose-700 bg-slate-950 border-slate-800 focus:ring-0 rounded-sm cursor-pointer"
           />
-          <span className="text-xs font-medium text-slate-300 hover:text-slate-100 transition-colors">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">
             Hide Inactive Fighters
           </span>
         </label>
       </div>
 
-      {/* Fighters Grid / Listing */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="leaderboard-grid">
-        {rankedFighters.map((fighter, index) => {
-          const isGold = fighter.activity.status === 'GOLD';
-          const isInactive = fighter.activity.status === 'INACTIVE';
-          
+      {/* --- STANDINGS GRID / ROW LIST --- */}
+      <div className="space-y-2.5">
+        
+        {/* RANK 1: CHAMPION CARD OVERRIDE */}
+        {rankedFighters[0] && (
+          <div 
+            onClick={() => onSelectFighter && onSelectFighter(rankedFighters[0].id)}
+            className="relative bg-gradient-to-r from-[#431928] to-[#1d070b] border border-rose-900/40 p-6 flex flex-col md:flex-row items-center justify-between gap-6 cursor-pointer hover:border-rose-700 transition duration-300 rounded"
+          >
+            <div className="flex items-center gap-6">
+              <span className="font-mono text-base font-black text-rose-400 shrink-0">#1</span>
+
+              {/* Hyper-realistic Championship Belt Badge */}
+              <img 
+                src="/championship_belt.png" 
+                alt="UFC Belt" 
+                className="h-14 w-20 object-contain shrink-0 filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] select-none"
+              />
+
+              {/* Fighter Details */}
+              <div>
+                <h3 className="font-display text-xl font-extrabold text-white uppercase tracking-wide leading-tight">
+                  {rankedFighters[0].name}
+                </h3>
+                <div className="text-xs text-rose-350 flex items-center gap-1 mt-1 font-medium">
+                  <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                  <span>{rankedFighters[0].gym} • {rankedFighters[0].location}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Medal Badge & ELO rating */}
+            <div className="flex items-center gap-8 self-end md:self-center">
+              {/* Hyper-realistic Gold Medal */}
+              <img 
+                src="/gold_standard.png" 
+                alt="Gold Standard Medal" 
+                className="h-14 w-14 object-contain shrink-0 filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] select-none"
+              />
+
+              <div className="text-right">
+                <div className="text-[8.5px] font-mono uppercase tracking-widest text-rose-300">Elo Rating</div>
+                <div className="text-2xl font-black font-mono text-amber-400 leading-none mt-1">
+                  {rankedFighters[0].elo}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* RANK 2+: CONTENDER DENSE ROW CARDS */}
+        {rankedFighters.slice(1).map((fighter, index) => {
+          const displayRank = index + 2;
           return (
-            <div
+            <div 
               key={fighter.id}
-              id={`fighter-card-${fighter.id}`}
               onClick={() => onSelectFighter && onSelectFighter(fighter.id)}
-              className={`relative cursor-pointer group flex flex-col p-5 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 ${
-                fighter.isChamp
-                  ? 'bg-slate-950 border-2 border-amber-500/50 shadow-[0_4px_25px_rgba(245,158,11,0.15)] ring-1 ring-amber-500/30'
-                  : 'bg-slate-900/40 hover:bg-slate-900 border border-slate-800/80 shadow-md hover:shadow-purple-950/20 hover:border-purple-800/50'
-              }`}
+              className="bg-[#151518] border border-slate-850/80 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:border-slate-850 hover:bg-[#1a1a20] transition rounded"
             >
-              {/* Champion Profile Banner Overrides */}
-              {fighter.isChamp && (
-                <div className="absolute -top-3 left-4 bg-amber-500 text-slate-950 px-3 py-0.5 text-[9px] font-bold uppercase rounded-full shadow-md tracking-widest flex items-center gap-1 z-10 animate-bounce">
-                  <Trophy className="w-2.5 h-2.5 fill-slate-900" />
-                  👑 {selectedSport} CHAMPION
+              
+              {/* Left Column: Rank, Avatar, Name & Pin */}
+              <div className="flex items-center gap-4 min-w-[280px]">
+                <span className="font-mono text-sm font-bold text-slate-500 w-6 text-center shrink-0">#{displayRank}</span>
+
+                {/* Avatar Initials Circle */}
+                <div className="w-9 h-9 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center font-display text-xs font-bold text-slate-400 select-none uppercase shrink-0">
+                  {fighter.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                 </div>
-              )}
 
-              {/* Rank & Rating Header */}
-              <div className="flex items-center justify-between mb-4">
-                <span className="font-mono text-xs font-bold text-slate-400">
-                  RANK #{index + 1}
-                </span>
-                
-                {/* Activity Badge */}
-                <span className={fighter.activity.className}>
-                  {fighter.activity.label}
-                </span>
-              </div>
-
-              {/* Fighter Core Info */}
-              <div className="flex-1 space-y-3">
                 <div>
-                  <h3 className={`text-base font-bold tracking-tight transition-colors duration-200 ${
-                    fighter.isChamp ? 'text-amber-400 group-hover:text-amber-300' : 'text-slate-100 group-hover:text-purple-400'
-                  }`}>
+                  <div className="font-display text-sm font-bold uppercase text-slate-100 group-hover:text-rose-450 transition leading-tight">
                     {fighter.name}
-                  </h3>
-                  <p className="text-xs text-slate-400 font-medium">
-                    📍 {fighter.gym} {fighter.location && `• ${fighter.location}`}
-                  </p>
-                </div>
-
-                {/* Grid Attributes */}
-                <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/40">
-                  <div>
-                    <span className="block text-[9px] uppercase tracking-wider text-slate-500">Gender & Age</span>
-                    <span className="text-xs font-medium text-slate-300">{fighter.gender} / {fighter.age}y</span>
                   </div>
-                  <div>
-                    <span className="block text-[9px] uppercase tracking-wider text-slate-500">Weight Class</span>
-                    <span className="text-xs font-medium text-slate-200 font-mono">{fighter.weightClass}</span>
+                  <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
+                    <span className="truncate max-w-[190px]">{fighter.gym} • {fighter.location}</span>
                   </div>
                 </div>
-
-                {/* Belt display if BJJ */}
-                {selectedSport === 'BJJ' && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-slate-500">BJJ Belt:</span>
-                    <span className={`px-2 py-0.5 font-mono font-bold text-[10px] rounded border ${
-                      fighter.bjjBelt === 'BLACK' ? 'bg-slate-950 text-white border-white/40' :
-                      fighter.bjjBelt === 'BROWN' ? 'bg-amber-950 text-amber-300 border-amber-800' :
-                      fighter.bjjBelt === 'PURPLE' ? 'bg-indigo-950 text-indigo-300 border-indigo-800' :
-                      fighter.bjjBelt === 'BLUE' ? 'bg-blue-950 text-blue-300 border-blue-800' :
-                      'bg-slate-200 text-slate-800 border-slate-400'
-                    }`}>
-                      {fighter.bjjBelt}
-                    </span>
-                  </div>
-                )}
               </div>
 
-              {/* Record Summary Footer & Elo Badge */}
-              <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-800/50">
+              {/* Center Columns: Details */}
+              <div className="grid grid-cols-3 gap-6 text-left flex-grow max-w-sm">
                 <div>
-                  <span className="block text-[9px] uppercase tracking-wider text-slate-500">Record ({selectedSport})</span>
-                  <span className="text-xs font-bold font-mono text-slate-300 tracking-wide">{fighter.recordStr}</span>
+                  <div className="text-[8.5px] font-mono uppercase tracking-widest text-slate-500 select-none">Gender & Age</div>
+                  <div className="text-xs font-medium text-slate-300 font-mono mt-0.5">{fighter.gender} / {fighter.age}y</div>
                 </div>
-                <div className="text-right">
-                  <span className="block text-[9px] uppercase tracking-wider text-slate-500">Elo Rating</span>
-                  <span className={`text-base font-black font-mono tracking-tighter ${
-                    fighter.isChamp ? 'text-amber-400' : 'text-purple-400'
-                  }`}>
-                    {fighter.elo}
-                  </span>
+                <div>
+                  <div className="text-[8.5px] font-mono uppercase tracking-widest text-slate-500 select-none">Age / Record</div>
+                  <div className="text-xs font-bold text-slate-200 font-mono mt-0.5">{fighter.recordStr}</div>
+                </div>
+                <div>
+                  <div className="text-[8.5px] font-mono uppercase tracking-widest text-slate-500 select-none">Weight Class</div>
+                  <div className="text-xs font-semibold text-slate-300 font-mono mt-0.5">{fighter.weightClass}</div>
                 </div>
               </div>
+
+              {/* Right: Badges & ELO */}
+              <div className="flex items-center gap-6 justify-between md:justify-end">
+                <img 
+                  src="/championship_belt.png" 
+                  alt="Championship Belt" 
+                  className="h-6 w-9 object-contain opacity-75 hover:opacity-100 transition shrink-0 select-none"
+                />
+
+                <img 
+                  src="/gold_standard.png" 
+                  alt="Gold Standard Medal" 
+                  className="h-6 w-6 object-contain opacity-75 hover:opacity-100 transition shrink-0 select-none"
+                />
+
+                <div className="text-right w-20 shrink-0">
+                  <div className="text-[8.5px] font-mono uppercase tracking-widest text-slate-550 select-none">Elo Rating</div>
+                  <div className="text-sm font-black font-mono text-rose-400 mt-0.5">
+                    {fighter.elo}
+                  </div>
+                </div>
+              </div>
+
             </div>
           );
         })}
 
         {rankedFighters.length === 0 && (
-          <div className="col-span-full py-16 text-center space-y-3 bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl">
-            <UserIcon className="w-12 h-12 text-slate-600 mx-auto" />
-            <p className="text-slate-400 font-medium text-sm">No fighters matching criteria are currently registered.</p>
-            {hideInactive && (
-              <button
-                onClick={() => setHideInactive(false)}
-                className="text-xs font-semibold text-purple-400 hover:text-purple-300 underline"
-              >
-                Show inactive profiles
-              </button>
-            )}
+          <div className="py-16 text-center font-mono text-xs text-slate-500 bg-[#151518] border border-slate-850 rounded">
+            No rankings resolved for sport category.
           </div>
         )}
+
       </div>
+
     </div>
   );
 }

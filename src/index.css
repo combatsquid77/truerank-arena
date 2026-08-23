@@ -2,53 +2,53 @@
 @import "tailwindcss";
 
 :root {
-  /* Default: Light mode - White and Purple */
-  --bg-base: #ffffff;
-  --bg-surface: #fcfcfd;
-  --bg-panel: #f3f4f6;
-  --bg-panel-hover: #e5e7eb;
-  --border-base: #e2e8f0;
-  --border-acc: #c084fc;
+  /* TrueRank Custom Mockup Design Style */
+  --bg-base: #1c1b21;          /* Core page base background */
+  --bg-surface: #131316;       /* Sidebar background */
+  --bg-panel: #151518;         /* Row container background */
+  --bg-panel-hover: #1e1e24;
+  --border-base: #1c1c22;      /* Thin dark dividers */
+  --border-acc: #be123c;       /* Crimson focus borders */
   
-  --text-primary: #0f172a;
-  --text-primary-sub: #1e293b;
-  --text-secondary: #475569;
-  --text-tertiary: #64748b;
+  --text-primary: #ffffff;     /* White data */
+  --text-primary-sub: #e0e0e0; 
+  --text-secondary: #9494a6;   /* Gray metadata */
+  --text-tertiary: #5d5d6a;
   
-  --text-acc-light: #a78bfa;
-  --text-acc: #6d28d9; /* Purple text */
-  --bg-acc: #7c3aed; /* Purple bg */
-  --bg-acc-hover: #6d28d9;
+  --text-acc-light: #fda4af;   
+  --text-acc: #f43f5e;         
+  --bg-acc: #431928;           /* Crimson active menu indicator */
+  --bg-acc-hover: #be123c;     /* Crimson sport active accent hover */
   --text-acc-on: #ffffff;
-  --color-glow: rgba(124, 58, 237, 0.08);
-  --accent-subtle: #faf5ff;
-  --accent-badge: #f3e8ff;
-  --shadow-acc: rgba(124, 58, 237, 0.15);
+  --color-glow: rgba(67, 25, 40, 0.08);
+  --accent-subtle: #240c11;
+  --accent-badge: #1d070b;
+  --shadow-acc: rgba(67, 25, 40, 0.2);
 }
 
 .dark {
-  /* Dark mode - Black and Lime Green */
-  --bg-base: #000000;
-  --bg-surface: #0a0a0a;
-  --bg-panel: #141414;
-  --bg-panel-hover: #1f1f1f;
-  --border-base: #1f1f1f;
-  --border-acc: #84cc16; /* Lime */
+  /* Kept aligned to prevent styling flips */
+  --bg-base: #1c1b21;
+  --bg-surface: #131316;
+  --bg-panel: #151518;
+  --bg-panel-hover: #1e1e24;
+  --border-base: #1c1c22;
+  --border-acc: #be123c;
   
-  --text-primary: #f4f4f5;
-  --text-primary-sub: #e4e4e7;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
+  --text-primary: #ffffff;
+  --text-primary-sub: #e0e0e0;
+  --text-secondary: #9494a6;
+  --text-tertiary: #5d5d6a;
   
-  --text-acc-light: #bef264;
-  --text-acc: #a3e635; /* Lime text is lighter in dark mode for readability */
-  --bg-acc: #84cc16; /* Lime bg */
-  --bg-acc-hover: #65a30d;
-  --text-acc-on: #000000;
-  --color-glow: rgba(132, 204, 22, 0.15);
-  --accent-subtle: #032200;
-  --accent-badge: #0a2f07;
-  --shadow-acc: rgba(132, 204, 22, 0.3);
+  --text-acc-light: #fda4af;
+  --text-acc: #f43f5e;
+  --bg-acc: #431928;
+  --bg-acc-hover: #be123c;
+  --text-acc-on: #ffffff;
+  --color-glow: rgba(67, 25, 40, 0.08);
+  --accent-subtle: #240c11;
+  --accent-badge: #1d070b;
+  --shadow-acc: rgba(67, 25, 40, 0.2);
 }
 
 @theme {
@@ -56,7 +56,7 @@
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  /* Custom overrides of standard Tailwind Slate colors to map to dynamic light/dark variables */
+  /* Custom overrides of standard Tailwind Slate colors to map to dynamic variables */
   --color-slate-950: var(--bg-base);
   --color-slate-900: var(--bg-surface);
   --color-slate-850: var(--bg-panel);
@@ -80,6 +80,16 @@
   --color-purple-800: var(--bg-acc-hover);
   --color-purple-950: var(--accent-badge);
   --color-purple-900: var(--accent-subtle);
+
+  /* Force sharp corner UI elements as shown in the mockup */
+  --radius-xs: 0px;
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
+  --radius-full: 9999px;
 }
 
 /* Smooth fading and entering effects for dynamic single-screen routing */
