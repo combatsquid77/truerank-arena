@@ -1429,6 +1429,17 @@ async function startServer() {
     }
   });
 
+  // Secure admin debug environment variables configuration
+  app.get('/api/admin/debug-env', checkAdmin, (req, res) => {
+    res.json({
+      nodeEnv: process.env.NODE_ENV,
+      port: process.env.PORT,
+      databaseUrlType: process.env.DATABASE_URL ? process.env.DATABASE_URL.split(':')[0] : 'undefined',
+      turnstileSecretKeyLength: process.env.TURNSTILE_SECRET_KEY ? process.env.TURNSTILE_SECRET_KEY.length : 0,
+      turnstileSecretKeyPrefix: process.env.TURNSTILE_SECRET_KEY ? process.env.TURNSTILE_SECRET_KEY.slice(0, 6) : 'undefined'
+    });
+  });
+
   // Get all fighters
   app.get('/api/admin/fighters', checkAdmin, async (req, res) => {
     try {

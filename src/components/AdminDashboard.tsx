@@ -110,6 +110,8 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
   const [newEventLocation, setNewEventLocation] = useState('');
   const [newEventPromoterId, setNewEventPromoterId] = useState('');
 
+  const [debugEnv, setDebugEnv] = useState<any>(null);
+
   const token = localStorage.getItem('truerank_auth_token') || '';
 
   const loadData = async () => {
@@ -137,6 +139,12 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
       setUsers(usersData);
       setFighters(fightersData);
       setEvents(eventsData);
+
+      const debugRes = await fetch('/api/admin/debug-env', { headers });
+      if (debugRes.ok) {
+        const debugData = await debugRes.json();
+        setDebugEnv(debugData);
+      }
       
       // Default choice for event promoter dropdown
       const promoters = usersData.filter((u: User) => u.role === 'PROMOTER');
@@ -452,6 +460,38 @@ export default function AdminDashboard({ onRefreshData }: AdminDashboardProps) {
         <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-200 text-xs px-4 py-3 rounded-xl flex items-center gap-2">
           <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
           <span>{success}</span>
+        </div>
+      )}
+
+      {/* Turnstile / Server Environmental Diagnostics */}
+      {debugEnv && (
+        <div className="bg-slate-900/20 border border-slate-900 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs">
+          <div className="space-y-1">
+            <div className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Cloudflare Turnstile Key Validation</div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-slate-350">
+                Key Prefix: <strong className="text-white">{debugEnv.turnstileSecretKeyPrefix || 'None'}</strong>
+              </span>
+              <span className="text-slate-350">
+                Key Length: <strong className="text-white">{debugEnv.turnstileSecretKeyLength || 0} bytes</strong>
+              </span>
+              <span>
+                {debugEnv.turnstileSecretKeyPrefix && debugEnv.turnstileSecretKeyPrefix.startsWith('0x') ? (
+                  <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/25">Live key detected</span>
+                ) : debugEnv.turnstileSecretKeyPrefix && debugEnv.turnstileSecretKeyPrefix.startsWith('1x') ? (
+                  <span className="text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/25 font-sans">Testing key fallback</span>
+                ) : (
+                  <span className="text-red-400 font-bold bg-red-500/10 px-2 py-0.5 rounded border border-red-500/25 font-sans">No secret key configured</span>
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="space-y-1 md:text-right">
+            <div className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Environment & Database</div>
+            <div className="text-slate-350">
+              Host Environment: <strong className="text-purple-405 uppercase">{debugEnv.nodeEnv || 'development'}</strong> | Storage Scheme: <strong className="text-purple-405 uppercase">{debugEnv.databaseUrlType || 'sqlite'}</strong>
+            </div>
+          </div>
         </div>
       )}
 
